@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GBIF Occurrence Heatmaps</title>
+</head>
+<body>
+  <div id="examples">
+    <div>
+      The links below show how to use this demo, it supports 3 parameters:
+      <dl>
+        <dt>geohash</dt>
+        <dd><a href="https://en.wikipedia.org/wiki/Geohash" target="_blank">geohash</a> accuracy, valid values are: geohash_1, geohash_2, geohash_3 (default), geohash_4</dd>
+        <dt>fq</dt>
+        <dd>Solr filter query, examples are: taxon_key:1, basis_of_record:OBSERVATION. Consult the Solr <a href="https://raw.githubusercontent.com/gbif/occurrence/solr-cloud/occurrence-hbase-solr-index/src/main/resources/solr/conf/schema.xml">schema</a> for more details (default value is empty, i.e.: no filter.)</dd>
+        <dt>solr</dt>
+        <dd>URL to the target Solr server, default values is http://prodsolr1-vh.gbif.org:8983/solr/uat_occurrence/</dd>
+      </dl>
+    </div>
+    <p><a href="heatmap.html?geohash=geohash_3&fq=taxon_key:212&solr=http://prodsolr1-vh.gbif.org:8983/solr/uat_occurrence/" target="_blank">UAT-Aves</a></p>
+    <p><a href="heatmap.html?geohash=geohash_3&solr=http://prodsolr1-vh.gbif.org:8983/solr/uat_occurrence/" target="_blank">UAT-All</a></p>
+    <p><a href="heatmap.html?geohash=geohash_3&fq=taxon_key:212&solr=http://c2n1.gbif.org:8983/solr/dev_occurrence/" target="_blank">DEV-Aves</a></p>
+    <p><a href="heatmap.html?geohash=geohash_3&solr=http://c2n1.gbif.org:8983/solr/dev_occurrence/" target="_blank">DEV-All</a></p>
+  </div>
+</body>
+</html>

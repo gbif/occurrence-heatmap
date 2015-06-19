@@ -85,7 +85,7 @@
             $("#console").append("Loading data into heatmap >> ");
             var heatPoints = [];
             for(var i = 0; i < data.facet_counts.facet_fields[geohash].length; i+=2){
-              heatPoints.push(toHeatPoint(data.facet_counts.facet_fields[geohash][i],data.facet_counts.facet_fields[geohash][i+1]));
+              heatPoints.push(geohash == 'cellid' ? toBoundingBox(data.facet_counts.facet_fields[geohash][i],data.facet_counts.facet_fields[geohash][i+1]) : toHeatPoint(data.facet_counts.facet_fields[geohash][i],data.facet_counts.facet_fields[geohash][i+1]));
             }
             heatmapLayer.setData({max: heatPoints.length, data: heatPoints});
             var mapEndTime = new Date();
@@ -150,6 +150,23 @@
           }
           return param;
         }
+      }
+
+      /**
+       * Javascript migration of https://github.com/gbif/parsers/blob/master/src/main/java/org/gbif/common/parsers/geospatial/CellIdUtils.java#L113.
+       */
+      function toBoundingBox(cellId, count) {
+        MAX_LATITUDE = 90;
+        MIN_LATITUDE = -MAX_LATITUDE;
+        MAX_LONGITUDE = 180;
+        MIN_LONGITUDE = -MAX_LONGITUDE;
+
+        var longitude = (cellId % 360) - MAX_LONGITUDE;
+        var latitude = MIN_LATITUDE;
+        if (cellId > 0) {
+          latitude = (Math.floor(cellId / 360) | 0 ) - MAX_LATITUDE;
+        }
+        return  {lat: latitude, lng: longitude, count: count};
       }
 
 

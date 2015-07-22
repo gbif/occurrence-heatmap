@@ -107,6 +107,7 @@
         var maxY = data.facet_counts.facet_heatmaps.coordinate[13];
         var counts_ints2D = data.facet_counts.facet_heatmaps.coordinate[15];
 
+
         var cellWidth = (maxX - minX) / columns;
         var halfWidth = cellWidth / 2;
         var cellHeight = (maxY - minY) / rows;
@@ -123,7 +124,7 @@
               L.marker([point.lat, point.lng]).addTo(map).bindPopup("lat: " + point.lat + " lng:" + point.lng);
               if(counts_ints2D[x][y]) {
                 totalCount += counts_ints2D[x][y];
-                var heatPoint = {lat: Number(halfHeight * (y+1)), lng: Number(halfWidth * (x+1)), count: counts_ints2D[x][y]};
+                var heatPoint = {lng: Number(halfHeight * (y+1)), lat: Number(halfWidth * (x+1)), count: counts_ints2D[x][y]};
                 heatPoints.push(heatPoint);
                 heatPointsStr = heatPointsStr + ("{lat:" + heatPoint.lat + " lng:" + heatPoint.lng + " count:" + heatPoint.count + "}");
               }

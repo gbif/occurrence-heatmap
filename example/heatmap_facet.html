@@ -120,7 +120,7 @@
             for(var y = 0; y < columns; y++) {
               totalGridCells += 1;
               var point = {lat: Number(halfHeight * (y+1)), lng: Number(halfWidth * (x+1))};
-              //L.marker([point.lat, point.lng]).addTo(map).bindPopup("lat: " + point.lat + " lng:" + point.lng);
+              L.marker([point.lat, point.lng]).addTo(map).bindPopup("lat: " + point.lat + " lng:" + point.lng);
               if(counts_ints2D[x][y]) {
                 totalCount += counts_ints2D[x][y];
                 var heatPoint = {lat: Number(halfHeight * (y+1)), lng: Number(halfWidth * (x+1)), count: counts_ints2D[x][y]};

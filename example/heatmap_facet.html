@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>GBIF Occurrence Heatmaps</title>
+  <style>
+    body, html { margin:0; padding:0; height:100%;}
+    body { font-family:sans-serif; }
+    body * { font-weight:200;}
+    h1 { position:absolute; background:white; padding:10px;}
+    #map { height:100%; }
+    .leaflet-container {
+      background: rgba(0,0,0,.8) !important;
+    }
+    #console {
+      font-size: x-small;
+      font-family: Courier, Courier New, monospaced;
+      vertical-align: top;
+    }
+  </style>
+  <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+  <script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+  <script src="/lib/heatmap.min.js"></script>
+  <script src="/lib/leaflet-heatmap.js"></script>
+  <script src="/lib/jquery-2.1.4.min.js"></script>
+  <script src="/lib/geohash.js"></script>
+  <script src="/lib/sphericalmercator.js"></script>
+</head>
+<body>
+  <div id="console"></div>
+  <div id="map"></div>
+  <script>
+    window.onload = function() {
+
+      var merc = new SphericalMercator({
+        size: 256
+      });
+
+      var baseLayer = L.tileLayer(
+        'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://cloudmade.com">CloudMade</a>',
+          maxZoom: 8
+        }
+      );
+
+      var cfg = {
+        // radius should be small ONLY if scaleRadius is true (or small radius is intended)
+        "radius": 2,
+        "maxOpacity": .8,
+        "minOpacity": .2,
+        // scales the radius based on map zoom
+        "scaleRadius": true,
+        // if set to false the heatmap uses the global maximum for colorization
+        // if activated: uses the data maximum within the current map boundaries
+        //   (there will always be a red spot with useLocalExtremas true)
+        "useLocalExtrema": false,
+        // which field name in your data represents the latitude - default "lat"
+        latField: 'lat',
+        // which field name in your data represents the longitude - default "lng"
+        lngField: 'lng',
+        // which field name in your data represents the data value - default "value"
+        valueField: 'count'
+      };
+
+
+      var heatmapLayer = new HeatmapOverlay(cfg);
+
+      var map = new L.Map('map', {
+        center: new L.LatLng(0, 0),
+        zoom: 3,
+        layers: [baseLayer, heatmapLayer]
+      });
+
+
+      function fillMap() {
+        var solrUrl = getSolrUrlParameter();
+        $("#console").text("Querying Solr >> ");
+
+        // record start time
+        var solrStartTime = new Date();
+
+        return $.ajax({
+          url: solrUrl + "/select?q=*:*" + getFilterQueryParameter() + "&facet.heatmap.distErrPct=0.15&facet.heatmap.maxCells=10000000&rows=0&facet=true&facet.heatmap=coordinate&facet.heatmap.format=ints2D&wt=json&json.wrf=?&facet.heatmap.gridLevel=" + getGridLevelParameter(),
+          success: function(data) {
+            // later record end time
+            var solrEndTime = new Date();
+            $("#console").append("Solr responded in " + (solrEndTime - solrStartTime) + " milliseconds >> ");
+            var mapStartTime = new Date();
+            $("#console").append("Loading data into heatmap >> ");
+            var heatPoints =  getHeatPoints(data);
+            heatmapLayer.setData({max: heatPoints.length, data: heatPoints});
+            var mapEndTime = new Date();
+            $("#console").append("Data loaded into heatmap in " + (mapEndTime - mapStartTime) + " millisenconds");
+          },
+          dataType: 'jsonp',
+          crossDomain: true
+        });
+      }
+
+      function getHeatPoints(data) {
+        var columns = data.facet_counts.facet_heatmaps.coordinate[3];
+        var rows = data.facet_counts.facet_heatmaps.coordinate[5];
+        var minX = data.facet_counts.facet_heatmaps.coordinate[7];
+        var maxX = data.facet_counts.facet_heatmaps.coordinate[9];
+        var minY = data.facet_counts.facet_heatmaps.coordinate[11];
+        var maxY = data.facet_counts.facet_heatmaps.coordinate[13];
+        var counts_ints2D = data.facet_counts.facet_heatmaps.coordinate[15];
+
+        var cellWidth = (maxX - minX) / columns;
+        var halfWidth = cellWidth / 2;
+        var cellHeight = (maxY - minY) / rows;
+        var halfHeight = cellHeight / 2;
+        var heatPoints = [];
+        var heatPointsStr = "";
+        for(var x = 0; x < rows; x++){
+          if(counts_ints2D[x]) {
+            for(var y = 0; y < columns; y++) {
+              var point = {lat: Number(halfHeight * (y+1)), lng: Number(halfWidth * (x+1))};
+              //L.marker([point.lat, point.lng]).addTo(map).bindPopup("lat: " + point.lat + " lng:" + point.lng);
+              if(counts_ints2D[x][y]) {
+                var heatPoint = {lat: Number(halfHeight * (y+1)), lng: Number(halfWidth * (x+1)), count: counts_ints2D[x][y]};
+                heatPoints.push(heatPoint);
+                xy = merc.inverse(new Array(heatPoint.lng,heatPoint.lat));
+                heatPointsStr = heatPointsStr + ("{lat:" + heatPoint.lat + " lng:" + heatPoint.lng + " count:" + heatPoint.count + "}");
+              }
+            }
+          }
+        }
+        return heatPoints;
+      }
+
+      /**
+       * Gets teh geohash parameter, returns 'geohash_3' if no parameter was specified.
+       */
+      function getGridLevelParameter() {
+        var gridLevel = getParameterByName("gridLevel");
+        if(gridLevel == "") {
+          gridLevel = 1;
+        }
+        return parseInt(gridLevel);
+      }
+
+      /**
+       * Gets the Solr filter query parameter.
+       * Returns a string with the format '&fq=..' if the param is present, returns an empty string otherwise.
+       */
+      function getFilterQueryParameter(){
+        var fq = getParameterByName("fq");
+        if(fq !== ""){
+          return "&fq=" + fq;
+        }
+        return fq;
+      }
+
+      function getSolrUrlParameter(){
+        var solr = getParameterByName("solr");
+        if(solr == "") {
+          return "http://prodsolr1-vh.gbif.org:8983/solr/uat_occurrence/";
+        }
+        return solr;
+      }
+
+      /**
+       * Gets the parameter value by its name.
+       */
+      function getParameterByName( name ){
+        var name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+        var regexS = "[\\?&]"+name+"=([^&#]*)",
+          regex = new RegExp( regexS ),
+          results = regex.exec( window.location.href );
+        if( results == null ){
+          return "";
+        } else{
+          var param = decodeURIComponent(results[1].replace(/\+/g, " "));
+          //firefox adds a trailing slash!!
+          if(param.lastIndexOf('/') == param.length -1 ) {
+            return param.slice(0,-1);
+          }
+          return param;
+        }
+      }
+
+
+      fillMap();
+
+
+      // make accessible for debugging
+      layer = heatmapLayer;
+
+    };
+  </script>
+</body>
+</html>

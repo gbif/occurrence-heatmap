@@ -11,7 +11,7 @@ Local example are stored in the `/example/` folder.
 
 Start a webserver (e.g. python SimpleHTTPServer from the project directory root):
 
-`python -m SimpleHTTPServer 1337 &`
+`python -m SimpleHTTPServer 1338 &`
 
 Then browse to 
 

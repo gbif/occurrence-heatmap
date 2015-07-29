@@ -11,8 +11,8 @@ L.SolrHeatmap = L.GeoJSON.extend({
     _this._layers = {};
     _this._getData();
     map.on('moveend', function() {
-      _this._clearLayers();
-      _this._getData();
+      this._clearLayers();
+      this._getData();
     });
   },
 
@@ -148,13 +148,30 @@ L.SolrHeatmap = L.GeoJSON.extend({
   _styleByCount: function() {
     var _this = this;
     _this.eachLayer(function(layer) {
-      var ratio = ((layer.feature.properties.count) / Math.log1p(_this.docsCount));
+      var colorScheme = _this._getColor(layer.feature.properties.count);
       layer.setStyle({
-        fillColor: '#F00',
-        fillOpacity: ratio,
-        weight: 1
+        fillColor: colorScheme.color,
+        fillOpacity: colorScheme.opacity,
+        weight: 1,
+        color: colorScheme.color
       });
     });
+  },
+
+  _getColor: function (count) {
+    if(count <= 10) {
+      return {color: "#FFFF00", opacity: 0.5};
+    } else if(count <= 10) {
+      return {color: "#FFCC00", opacity: 0.55};
+    } else if(count <= 1000) {
+      return {color: "#FF9900", opacity: 0.65};
+    } else if(count <= 10000) {
+      return {color: "#FF6600", opacity: 0.7};
+    } else if(count <= 100000) {
+      return {color: "#FF3300", opacity: 0.8};
+    } else {
+      return {color: "#CC0000", opacity: 0.9};
+    }
   },
 
   _minLng: function(column) {
@@ -180,11 +197,12 @@ L.SolrHeatmap = L.GeoJSON.extend({
       url: _this._solrUrl + _this._solrQuery(),
       dataType: 'JSONP',
       data: {
-        q: '*:*',
+        q: 'has_coordinate:true',
         wt: 'json',
         facet: true,
         'facet.heatmap': _this.options.field,
         'facet.heatmap.geom': _this._mapViewToWkt(),
+        'facet.heatmap.gridLevel':3,
         fq: _this.options.field + _this._mapViewToEnvelope()
       },
       jsonp: 'json.wrf',

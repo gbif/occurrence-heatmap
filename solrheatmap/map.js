@@ -21,4 +21,6 @@ var solr = L.solrHeatmap('http://uatsolr1-vh.gbif.org:8983/solr/uat_occurrence',
   onEachFeature: onEachFeature
 }).addTo(map);
 
-L.tileLayer('http://api.gbif-uat.org/v0.9/map/density/tile.png?key=&resolution=4&x={x}&y={y}&z={z}&type=ALL').addTo(map);
+var gbifLayer = L.tileLayer('http://api.gbif-uat.org/v0.9/map/density/tile.png?key=&resolution=4&x={x}&y={y}&z={z}&type=ALL').addTo(map);
+L.control.layers({"Openstreemap":layer}, {"SolrHeatmap":solr,"GBIF Tile Server":gbifLayer}).addTo(map);
+

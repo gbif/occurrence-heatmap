@@ -203,7 +203,7 @@ L.SolrHeatmap = L.GeoJSON.extend({
         'facet.heatmap': _this.options.field,
         'facet.heatmap.geom': _this._mapViewToWkt(),
         'facet.heatmap.gridLevel':3,
-        fq: _this.options.field + _this._mapViewToEnvelope()
+        fq: _this.options.field + _this._mapViewToEnvelope() + _this.getFilterParameter()
       },
       jsonp: 'json.wrf',
       success: function(data) {
@@ -215,6 +215,34 @@ L.SolrHeatmap = L.GeoJSON.extend({
         _this._computeHeatmapObject(data);
       }
     });
+  },
+
+  getFilterParameter: function(){
+    var fq = this.getParameterByName("fq");
+    if(fq == "") {
+      return "";
+    }
+    return " AND " + fq;
+  },
+
+  /**
+   * Gets the parameter value by its name.
+   */
+  getParameterByName: function( name ){
+    var name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+    var regexS = "[\\?&]"+name+"=([^&#]*)",
+      regex = new RegExp( regexS ),
+      results = regex.exec( window.location.href );
+    if( results == null ){
+      return "";
+    } else{
+      var param = decodeURIComponent(results[1].replace(/\+/g, " "));
+      //firefox adds a trailing slash!!
+      if(param.lastIndexOf('/') == param.length -1 ) {
+        return param.slice(0,-1);
+      }
+      return param;
+    }
   },
 
   _mapViewToEnvelope: function() {

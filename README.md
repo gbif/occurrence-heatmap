@@ -2,6 +2,8 @@
 
 This project shows how to use Solr facets and geohashes to produce real time maps. 
 
+*This project it's a proof of concept, it will be deleted and is not actively maintained*
+
 ## Examples
 
 Local example are stored in the `/example/` folder.
